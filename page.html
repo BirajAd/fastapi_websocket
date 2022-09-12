@@ -1,0 +1,28 @@
+<script>
+    var ws = new WebSocket("ws://localhost:8000/test")
+    var msgs = []
+    ws.onmessage = event => {
+        console.log(number)
+        var number = document.getElementById("number")
+        msgs.push(event.data)
+        number.innerHTML = event.data
+        let list = document.getElementById("myList")
+        let li = document.createElement("li");
+        li.innerHTML = event.data;
+        list.appendChild(li);
+    }
+    handleOnClick = () => {
+        var message = document.getElementById("message").value
+        console.log(message)
+        ws.send(message)
+        document.getElementById("message").value = ''
+    }
+</script>
+
+<div style="display: flex; flex-direction: column; justify-content: center; align-items: center; align-content: center;">
+    <input type="text" id="message">
+    <button onclick="handleOnClick()">Click Me</button>
+    <div id="number" style="align-self: left">0</div>
+
+    <ul id="myList"></ul>
+</div>
