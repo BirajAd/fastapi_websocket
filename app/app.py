@@ -41,23 +41,22 @@ async def test(websocket: WebSocket):
 @app.post("/create_user")
 async def create_user(user: CreateUser, db: Session = Depends(get_db)):
     try:
-        user_count = db.query(models.User).filter(models.User.email==user.email).count()
+        user_count = db.query(models.User).filter((models.User.email==user.email) | (models.User.username==user.username)).count()
         if(user_count):
             return {
                 'status': False,
-                'details': 'User with the email already exists'
+                'details': 'User with the email/username already exists'
             }
         user.password = hash_password(user.password)
+        
         new_user = models.User(**user.dict())
         db.add(new_user)
         db.commit()
         db.refresh(new_user)
-        response = new_user.__dict__
-        del response['password']
         
         return {
             "status": True,
-            "details": response
+            "details": UserOutput(**new_user.__dict__)
         }
 
     except Exception as e:

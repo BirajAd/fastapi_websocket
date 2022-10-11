@@ -1,5 +1,14 @@
 from passlib.context import CryptContext
 from requests import Session
+from dotenv import load_dotenv
+import os
+from datetime import datetime, timedelta
+from typing import Union
+from jose import JWTError, jwt
+
+load_dotenv()
+
+TOKEN_EXPIRES_MINUTES = 15
 
 from app.schemas import UserOutput
 from . import models
@@ -25,6 +34,19 @@ def authenticate_user(db: Session, email: str, password: str):
         return False, user
     if not verify_password(password, user.password):
         return False, "Password didn't match"
-    
+    a_token = create_access_token(data={"sub": user.username})
+    print(a_token)
     return True, user
+
+def create_access_token(data: dict, expires_delta: Union[timedelta, None] = None):
+    to_encode = data.copy()
+    SECRET_KEY = os.getenv("SECRET_KEY")
+    ALGORITHM = os.getenv("ALGORITHM")
+    if expires_delta:
+        expire = datetime.utcnow() + expires_delta
+    else:
+        expire = datetime.utcnow() + timedelta(minutes=TOKEN_EXPIRES_MINUTES)
+    to_encode.update({"exp": expire})
+    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    return encoded_jwt
 

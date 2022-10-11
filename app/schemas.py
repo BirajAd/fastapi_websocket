@@ -1,4 +1,5 @@
 from optparse import Option
+
 from pydantic import BaseModel, EmailStr
 from datetime import datetime
 from typing import Optional
@@ -7,8 +8,9 @@ class CreateUser(BaseModel):
     email: EmailStr
     password: str
     username: str
-    # first_name: Optional[str]
-    # last_name: Optional[str]
+    first_name: Optional[str]
+    last_name: Optional[str]
+    # date_of_birth: Optional[datetime]
     # created_at: datetime
 
 class UserOutput(BaseModel):
