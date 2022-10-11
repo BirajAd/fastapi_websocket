@@ -13,8 +13,7 @@
     }
     handleOnClick = () => {
         var message = document.getElementById("message").value
-        console.log(message)
-        ws.send(message)
+        ws.send(JSON.stringify({'message': message}))
         document.getElementById("message").value = ''
     }
 </script>
