@@ -1,6 +1,7 @@
 from requests import Session
+from app.authentication import authenticate_user, get_user, hash_password
 from app.database import get_db
-from app.schemas import CreateUser, CreateUserOutput
+from app.schemas import CreateUser, LoginUser, UserOutput
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Depends
 import uvicorn
 from typing import List
@@ -46,6 +47,7 @@ async def create_user(user: CreateUser, db: Session = Depends(get_db)):
                 'status': False,
                 'details': 'User with the email already exists'
             }
+        user.password = hash_password(user.password)
         new_user = models.User(**user.dict())
         db.add(new_user)
         db.commit()
@@ -63,5 +65,24 @@ async def create_user(user: CreateUser, db: Session = Depends(get_db)):
 
     return new_user
 
-if __name__ == "__main__":
-    uvicorn.run("app:app", reload=True)
+@app.post("/login")
+async def login(user: LoginUser, db: Session = Depends(get_db)):
+    try:
+        status, msg = authenticate_user(db, user.email, user.password)
+        if not status:
+            return {
+                "status": False,
+                "details": msg
+            }
+        else:
+            return {
+                "status": True,
+                "details": UserOutput(**msg.__dict__)
+            }
+    except Exception as e:
+        print(str(e))
+        
+
+
+# if __name__ == "__main__":
+#     uvicorn.run("app:app", reload=True)

@@ -11,6 +11,13 @@ class CreateUser(BaseModel):
     # last_name: Optional[str]
     # created_at: datetime
 
-class CreateUserOutput(BaseModel):
-    email: str
+class UserOutput(BaseModel):
+    id: int
+    email: EmailStr
     username: str
+    is_active: bool
+    is_verified: bool
+    
+class LoginUser(BaseModel):
+    email: EmailStr
+    password: str
