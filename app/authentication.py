@@ -9,6 +9,8 @@ from jose import JWTError, jwt
 load_dotenv()
 
 TOKEN_EXPIRES_MINUTES = 15
+SECRET_KEY = os.getenv("SECRET_KEY")
+ALGORITHM = os.getenv("ALGORITHM")
 
 from app.schemas import UserOutput
 from . import models
@@ -28,20 +30,25 @@ def get_user(db: Session, email: str):
         return False, "User not found"
     return True, user
 
+def get_current_user(db: Session, email: str):
+    user = db.query(models.User).get(email==email)
+
+    if not user:
+        return False, "User not found"
+    return True, user
+
 def authenticate_user(db: Session, email: str, password: str):
     status, user = get_user(db, email)
     if not status:
         return False, user
     if not verify_password(password, user.password):
         return False, "Password didn't match"
-    a_token = create_access_token(data={"sub": user.username})
-    print(a_token)
+    a_token = create_access_token(data={"sub": user.email})
+    user.token = a_token
     return True, user
 
 def create_access_token(data: dict, expires_delta: Union[timedelta, None] = None):
     to_encode = data.copy()
-    SECRET_KEY = os.getenv("SECRET_KEY")
-    ALGORITHM = os.getenv("ALGORITHM")
     if expires_delta:
         expire = datetime.utcnow() + expires_delta
     else:
@@ -49,4 +56,15 @@ def create_access_token(data: dict, expires_delta: Union[timedelta, None] = None
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
+
+def email_from_token(token: str):
+    try:
+        decoded_jwt = jwt.decode(token, SECRET_KEY)
+        print(decoded_jwt)
+        if decoded_jwt:
+            return True, decoded_jwt
+        else:
+            return False, "invalid token"
+    except Exception as e:
+        return False, "invalid token"
 

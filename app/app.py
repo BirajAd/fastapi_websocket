@@ -1,13 +1,17 @@
 from requests import Session
-from app.authentication import authenticate_user, get_user, hash_password
+from app.authentication import authenticate_user, email_from_token, get_current_user, get_user, hash_password
 from app.database import get_db
-from app.schemas import CreateUser, LoginUser, UserOutput
+from app.schemas import CreateUser, LoginUser, UserOutput, UserInfo
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Depends
+from pydantic import EmailStr
 import uvicorn
-from typing import List
+from typing import List, Set
 from . import models
+from fastapi.security import OAuth2PasswordBearer
 
 app = FastAPI()
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 
 class ConnectionManager:
     def __init__(self):
@@ -15,13 +19,15 @@ class ConnectionManager:
 
     async def connect(self, websocket: WebSocket):
         await websocket.accept()
-        self.active_connections.append(websocket)
+        if websocket not in self.active_connections:
+            self.active_connections.append(websocket)
 
     def disconnect(self, websocket: WebSocket):
         self.active_connections.remove(websocket)
 
     async def broadcast(self, message: str):
         for conn in self.active_connections:
+            print(message)
             await conn.send_text(message["message"])
     
 manager = ConnectionManager()
@@ -78,6 +84,28 @@ async def login(user: LoginUser, db: Session = Depends(get_db)):
                 "status": True,
                 "details": UserOutput(**msg.__dict__)
             }
+    except Exception as e:
+        print(str(e))
+
+@app.get("/userinfo")
+async def userinfo(db: Session = Depends(get_db), token: str = Depends(oauth2_scheme)):
+    try:
+        status, email = email_from_token(token)
+        if not status:
+            return {
+                'status': False, 
+                'details': "Invalid token"
+            }
+        status, user = get_current_user(db, email)
+        if not status:
+            return {
+                'status': False,
+                'details': "User not found"
+            }
+        return {
+            'status': True,
+            'details': UserInfo(**user.__dict__)
+        }
     except Exception as e:
         print(str(e))
         

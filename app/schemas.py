@@ -15,6 +15,14 @@ class CreateUser(BaseModel):
 
 class UserOutput(BaseModel):
     id: int
+    token: str
+    email: EmailStr
+    username: str
+    is_active: bool
+    is_verified: bool
+
+class UserInfo(BaseModel):
+    id: int
     email: EmailStr
     username: str
     is_active: bool
