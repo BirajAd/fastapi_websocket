@@ -31,3 +31,11 @@ class UserInfo(BaseModel):
 class LoginUser(BaseModel):
     email: EmailStr
     password: str
+
+class Connection(BaseModel):
+    group_name: str
+
+class Room(BaseModel):
+    id: int
+    group_name: str
+    

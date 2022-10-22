@@ -5,10 +5,11 @@ import os
 from datetime import datetime, timedelta
 from typing import Union
 from jose import JWTError, jwt
+from fastapi import WebSocket, Cookie, Query, status
 
 load_dotenv()
 
-TOKEN_EXPIRES_MINUTES = 15
+TOKEN_EXPIRES_MINUTES = 4*60 #4 hours
 SECRET_KEY = os.getenv("SECRET_KEY")
 ALGORITHM = os.getenv("ALGORITHM")
 
@@ -68,3 +69,6 @@ def email_from_token(token: str):
     except Exception as e:
         return False, "invalid token"
 
+# for websocket
+async def get_query(conn_id: Union[str, None] = Query(default=None)):
+   return conn_id 

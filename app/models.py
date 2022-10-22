@@ -39,3 +39,4 @@ class Message(Base):
     read_at = Column(DateTime)
     content = Column(String)
     connection = Column(Integer, ForeignKey("connection.id"))
+    sender = Column(Integer, ForeignKey("user.id"))
