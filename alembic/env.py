@@ -11,7 +11,7 @@ from alembic import context
 config = context.config
 
 config.set_main_option(
-    "sqlalchemy.url", "sqlite:///./chat_app.db"
+    "sqlalchemy.url", "postgresql://postgres:postgres@localhost:5432/postgres"
 )
 
 # Interpret the config file for Python logging.

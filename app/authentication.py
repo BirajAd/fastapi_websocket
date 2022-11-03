@@ -25,14 +25,14 @@ def hash_password(password):
     return pwd_context.hash(password)
 
 def get_user(db: Session, email: str):
-    user = db.query(models.User).get(email==email)
+    user = db.query(models.User).filter(email==email).first()
     
     if not user:
         return False, "User not found"
     return True, user
 
 def get_current_user(db: Session, email: str):
-    user = db.query(models.User).get(email==email)
+    user = db.query(models.User).filter(email==email).first()
 
     if not user:
         return False, "User not found"
@@ -61,7 +61,7 @@ def create_access_token(data: dict, expires_delta: Union[timedelta, None] = None
 def email_from_token(token: str):
     try:
         decoded_jwt = jwt.decode(token, SECRET_KEY)
-        print(decoded_jwt)
+        
         if decoded_jwt:
             return True, decoded_jwt
         else:

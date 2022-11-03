@@ -1,78 +1,26 @@
-from datetime import datetime
 from requests import Session
-from app.authentication import authenticate_user, email_from_token, get_current_user, get_query, get_user, hash_password
+from app.authentication import authenticate_user, email_from_token, get_current_user, get_query, hash_password, create_access_token
 from app.database import get_db
 from app.schemas import Connection, CreateUser, LoginUser, Room, UserOutput, UserInfo
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Depends
-from pydantic import EmailStr
-import uvicorn
-from typing import List, Dict
 from . import models
 from fastapi.security import OAuth2PasswordBearer
+from .connection_manager import ConnectionManager
 
-app = FastAPI()
+app = FastAPI(docs_url=None)
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 
-class ConnectionManager:
-    def __init__(self):
-        self.active_connections: Dict = {}
-        """
-            {
-                "conn_id1": [{ "socket": <WebSocket>, "authenticated": <bool>, "joined": <datetime> }, ...]
-                "conn_id2": [{ "socket": <WebSocket>, "authenticated": <bool>, "joined": <datetime> }, ...]
-            }
-        """
-
-    async def connect(self, websocket: WebSocket, conn_id: int):
-        await websocket.accept()
-        if conn_id in self.active_connections:
-            self.active_connections[conn_id].append({ "socket": websocket, "authenticated": False, "joined": datetime.now(), "user": None })
-        else:
-            self.active_connections[conn_id] = [{ "socket": websocket, "authenticated": False, "joined": datetime.now(), "user": None }]
-
-    def disconnect(self, websocket: WebSocket, conn_id: int):
-        if conn_id not in self.active_connections:
-            return
-        for conn in self.active_connections[conn_id]:
-            if(conn["socket"] == websocket):
-                print(websocket, " disconnected")
-                del self.active_connections[conn_id]
-    
-    def is_authenticated(self, websocket: WebSocket, conn_id: int):
-        if conn_id in self.active_connections:
-            for webs in self.active_connections[conn_id]:
-                if(webs["socket"] == websocket):
-                    return webs["authenticated"]
-        else:
-            return False
-    
-    def mark_authenticated(self, websocket: WebSocket, conn_id: int, email: str):
-        if conn_id not in self.active_connections:
-            return
-        else:
-            connection = self.active_connections[conn_id]
-            for c in connection:
-                if(c["socket"] == websocket):
-                    c["authenticated"] = True
-                    c["user"] = email
-
-    async def broadcast(self, message: str, conn_id: int):
-        if conn_id not in self.active_connections:
-            print("Connection id doesn't exist")
-        else:
-            for webs in self.active_connections[conn_id]:
-                if webs["authenticated"]:
-                    await webs["socket"].send_json(message)
-    
 manager = ConnectionManager()
 
 @app.websocket("/test/{conn_id}")
-async def test(websocket: WebSocket, conn_id = Depends(get_query)):
-    if conn_id:
-        await manager.connect(websocket, conn_id)
-    else:
-        return "No connection id provided"
+async def test(websocket: WebSocket, db: Session = Depends(get_db), conn_id = Depends(get_query)):
+    # connection_valid = db.query(models.Connection).get(conn_id)
+    # print(connection_valid)
+    # if conn_id and connection_valid:
+    await manager.connect(websocket, conn_id)
+    # else:
+    #     return "No connection id provided"
     try:
         while True:
             if conn_id:
@@ -106,16 +54,17 @@ async def create_user(user: CreateUser, db: Session = Depends(get_db)):
         db.add(new_user)
         db.commit()
         db.refresh(new_user)
+
+        new_user = new_user.__dict__
+        new_user["token"] = create_access_token(data={"sub": user.email})
         
         return {
             "status": True,
-            "details": UserOutput(**new_user.__dict__)
+            "details": UserOutput(**new_user)
         }
 
     except Exception as e:
         print(str(e))
-
-    return new_user
 
 @app.post("/login")
 async def login(user: LoginUser, db: Session = Depends(get_db)):
