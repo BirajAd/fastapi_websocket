@@ -47,6 +47,7 @@ class ConnectionManager:
                     c["user"] = email
 
     async def broadcast(self, message: str, conn_id: int):
+        print(self.active_connections)
         if conn_id not in self.active_connections:
             print("Connection id doesn't exist")
         else:

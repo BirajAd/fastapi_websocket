@@ -6,6 +6,7 @@ from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Depends
 from . import models
 from fastapi.security import OAuth2PasswordBearer
 from .connection_manager import ConnectionManager
+from .services.message_service import persist_message
 
 app = FastAPI(docs_url=None)
 
@@ -27,8 +28,13 @@ async def test(websocket: WebSocket, db: Session = Depends(get_db), conn_id = De
                 request = await websocket.receive_json()
                 if(manager.is_authenticated(websocket, conn_id)):
                     print("already authenticated")
+                    for con in manager.active_connections[conn_id]:
+                        if con['socket'] == websocket:
+                            active_user = con['user']
+                    persist_message(db, active_user, conn_id, request["message"])
                     await manager.broadcast(request, conn_id)
                 else:
+                    print(request["token"], ' is the token')
                     status, email = email_from_token(request["token"])
                     if status:
                         manager.mark_authenticated(websocket, conn_id, email["sub"])
@@ -141,7 +147,7 @@ async def userinfo(db: Session = Depends(get_db), token: str = Depends(oauth2_sc
                 'status': False, 
                 'details': "Invalid token"
             }
-        status, user = get_current_user(db, email)
+        status, user = get_current_user(db, email["sub"])
         if not status:
             return {
                 'status': False,

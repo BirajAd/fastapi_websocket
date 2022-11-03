@@ -25,20 +25,22 @@ def hash_password(password):
     return pwd_context.hash(password)
 
 def get_user(db: Session, email: str):
-    user = db.query(models.User).filter(email==email).first()
+    user = db.query(models.User).filter(models.User.email==email).first()
+    print('user: ', user.id)
     
     if not user:
         return False, "User not found"
     return True, user
 
 def get_current_user(db: Session, email: str):
-    user = db.query(models.User).filter(email==email).first()
+    user = db.query(models.User).filter(models.User.email==email).first()
 
     if not user:
         return False, "User not found"
     return True, user
 
 def authenticate_user(db: Session, email: str, password: str):
+    print(email)
     status, user = get_user(db, email)
     if not status:
         return False, user
