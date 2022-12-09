@@ -61,6 +61,11 @@ def create_access_token(data: dict, expires_delta: Union[timedelta, None] = None
     return encoded_jwt
 
 def email_from_token(token: str):
+    """
+        returns: email from a jwt token
+            Parms: 
+             token: <jwt_token>
+    """
     try:
         decoded_jwt = jwt.decode(token, SECRET_KEY)
         

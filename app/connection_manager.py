@@ -25,7 +25,7 @@ class ConnectionManager:
             return
         for conn in self.active_connections[conn_id]:
             if(conn["socket"] == websocket):
-                print(websocket, " disconnected")
+                print(conn["user"], " disconnected from group ", conn_id)
                 del self.active_connections[conn_id]
     
     def is_authenticated(self, websocket: WebSocket, conn_id: int):
@@ -46,12 +46,11 @@ class ConnectionManager:
                     c["authenticated"] = True
                     c["user"] = email
 
-    async def broadcast(self, message: str, conn_id: int):
-        print(self.active_connections)
+    async def broadcast(self, message: str, conn_id: int, sender: str):
         if conn_id not in self.active_connections:
             print("Connection id doesn't exist")
         else:
             for webs in self.active_connections[conn_id]:
                 if webs["authenticated"]:
-                    message["user"] = webs.get("user")
+                    message["user"] = sender
                     await webs["socket"].send_json(message)

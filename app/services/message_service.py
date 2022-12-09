@@ -3,7 +3,6 @@ from ..authentication import get_user
 from ..models import Message, Connection
 
 def persist_message(db: Session, email: str, conn_id: int, msg: str):
-    print(email)
     status, user = get_user(db, email)
     # conn = db.query(Connection).get(conn_id)
     if status:

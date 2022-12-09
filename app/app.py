@@ -7,6 +7,7 @@ from . import models
 from fastapi.security import OAuth2PasswordBearer
 from .connection_manager import ConnectionManager
 from .services.message_service import persist_message
+from app.routings.messaging import router
 
 app = FastAPI(docs_url=None)
 
@@ -32,9 +33,8 @@ async def test(websocket: WebSocket, db: Session = Depends(get_db), conn_id = De
                         if con['socket'] == websocket:
                             active_user = con['user']
                     persist_message(db, active_user, conn_id, request["message"])
-                    await manager.broadcast(request, conn_id)
+                    await manager.broadcast(request, conn_id, active_user)
                 else:
-                    print(request["token"], ' is the token')
                     status, email = email_from_token(request["token"])
                     if status:
                         manager.mark_authenticated(websocket, conn_id, email["sub"])
@@ -160,6 +160,8 @@ async def userinfo(db: Session = Depends(get_db), token: str = Depends(oauth2_sc
         }
     except Exception as e:
         print(str(e))
+
+app.mount("/messaging", router)
 
 # if __name__ == "__main__":
 #     uvicorn.run("app:app", reload=True)
