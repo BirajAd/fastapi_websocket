@@ -38,4 +38,12 @@ class Connection(BaseModel):
 class Room(BaseModel):
     id: int
     group_name: str
+
+class OutputMessage(BaseModel):
+    id: int
+    sent_at: datetime
+    read_at: Optional[datetime]
+    content: str
+    connection: int
+    sender: int
     

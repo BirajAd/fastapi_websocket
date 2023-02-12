@@ -120,7 +120,7 @@ async def userinfo(connection: Connection, db: Session = Depends(get_db), token:
                 'status': False, 
                 'details': "Invalid token"
             }
-        status, user = get_current_user(db, email)
+        status, user = get_current_user(db, email["sub"])
         if not status:
             return {
                 'status': False,
